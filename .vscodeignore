@@ -1,7 +1,6 @@
 .vscode/**
 .github/**
-node_modules/**
-out/**
+out/test/**
 src/**
 .gitignore
 .yarnrc
@@ -9,4 +8,3 @@ src/**
 **/.eslintrc.json
 **/*.map
 **/*.ts
-webpack.config.js
