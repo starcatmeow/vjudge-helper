@@ -2,7 +2,7 @@
 	"name": "vjudge-helper",
 	"displayName": "VJudge Helper",
 	"description": "Help fetch statement and submit your code!",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"keywords": [
 		"VJudge",
 		"OJ",
@@ -98,7 +98,8 @@
 		"lint": "eslint src --ext ts",
 		"deploy": "vsce publish --yarn",
 		"webpack": "webpack --mode development",
-		"webpack-dev": "webpack --mode development --watch"
+		"webpack-dev": "webpack --mode development --watch",
+		"package": "vsce package"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.3",
