@@ -1,41 +1,30 @@
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
   release:
     types:
-    - created
+      - created
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 10.x
+        node-version: 14.x
     - run: npm install
     - name: Publish
-      if: success() && startsWith( github.ref, 'refs/tags/') && matrix.os == 'windows-latest'
+      if: success() && startsWith( github.ref, 'refs/tags/')
       run: npm run deploy
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: Package
       if: success() && startsWith( github.ref, 'refs/tags/')
       run: npm run package
-    - name: Rename VSIX
-      if: success() && matrix.os != 'windows-latest'
-      env:
-        MATRIXOS: ${{matrix.os}}
-      run: for f in *.vsix ; do mv $f $MATRIXOS"-$f" ; done
-    - name: Rename VSIX for Windows
-      if: success() && matrix.os == 'windows-latest'
-      run: (Get-ChildItem *.vsix) | Rename-Item -NewName {$_.Name -replace "^","windows-"}
     - name: Release
       uses: alexellis/upload-assets@0.2.2
       if: success() && startsWith( github.ref, 'refs/tags/')
