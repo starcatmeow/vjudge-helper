@@ -1,11 +1,11 @@
 declare var document: any;
 declare var window: any;
 import * as vscode from 'vscode';
-import * as pp from 'puppeteer';
 import * as path from 'path';
+import VJudgeAPI, { Contest, ContestDetail, Problem, Solution } from '@starcatmeow/vjudge-api';
 export class VJudge {
-    private browser?: pp.Browser;
-    public userId?: string;
+    private api: VJudgeAPI;
+    public userId?: number;
     private username?: string;
     private password?: string;
     public loggedin: boolean;
@@ -13,12 +13,8 @@ export class VJudge {
     constructor(){
         this.infoProvider = new VJudgeInfoProvider(this);
         this.loggedin = false;
+        this.api = new VJudgeAPI();
     }
-    ensureBrowser = async () => {
-        if(!this.browser){
-            this.browser = await pp.launch({ headless: true });
-        }
-    };
     login = async () => {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -26,8 +22,6 @@ export class VJudge {
             cancellable: false
         }, async (progress) => {
             progress.report({ increment: 0 });
-            await this.ensureBrowser();
-            progress.report({ increment: 10 });
             if(!this.username){
                 this.username = await vscode.window.showInputBox({ placeHolder: 'VJudge Username' });
                 if(!this.username){
@@ -42,189 +36,69 @@ export class VJudge {
                     return Promise.resolve();
                 }
             }
-            progress.report({ increment: 10 });
-            const loginPage = await this.browser!.newPage();
-            await loginPage.goto('https://vjudge.net');
-            progress.report({ increment: 30 });
-            const loginButtonText = await loginPage.evaluate(() => document.querySelector('#navbarResponsive > ul > li:nth-child(8) > a').innerText);
-            const loginButton = await loginPage.$('#navbarResponsive > ul > li:nth-child(8) > a');
-            if(!loginButton || loginButtonText !== 'Login'){
-                vscode.window.showErrorMessage('Already signed in!');
-                return Promise.resolve();
+            progress.report({ increment: 50 });
+            try{
+                this.userId = await this.api.login(this.username, this.password);
+            }catch(e){
+                vscode.window.showErrorMessage(<string>e);
+                this.username = undefined;
+                this.password = undefined;
+                return;
             }
-            await loginButton.click();
-            await loginPage.waitForTimeout(1000);
-            await loginPage.type('#login-username', this.username);
-            await loginPage.type('#login-password', this.password);
-            await loginPage.click('#btn-login');
-            progress.report({ increment: 20 });
-            while(true){
-                try{
-                    await loginPage.waitForNavigation({
-                        timeout: 1000
-                    });
-                }catch{
-                    const error = await loginPage.evaluate(() => {
-                        if(!document.querySelector('#login-alert') || document.querySelector('#login-alert').style.display === 'none'){
-                            return undefined;
-                        }else{
-                            return document.querySelector('#login-alert').innerText;
-                        }
-                    });
-                    if(!error){
-                        const loginButtonText = await loginPage.evaluate(() => document.querySelector('#navbarResponsive > ul > li:nth-child(8) > a').innerText);
-                        if(loginButtonText !== 'Login'){
-                            break;
-                        }
-                        continue;
-                    }else{
-                        vscode.window.showErrorMessage(error);
-                        return Promise.resolve();
-                    }
-                }
-                break;
-            }
-            progress.report({ increment: 25 });
-            const usernameFromPage = await loginPage.evaluate(() => document.querySelector('#userNameDropdown').innerText);
-            await loginPage.goto(`https://vjudge.net/user/${usernameFromPage}`);
-            this.userId = await loginPage.evaluate(() => document.querySelector('#visitor_userId').value);
-            vscode.window.showInformationMessage(`Logged in as ${usernameFromPage}(#${this.userId})!`);
+            progress.report({ increment: 50 });
+            vscode.window.showInformationMessage(`Logged in as ${this.username}(#${this.userId})!`);
             this.loggedin = true;
-            loginPage.close();
             this.infoProvider.register();
             return Promise.resolve();
         });
     };
-    fetchContestList = async (): Promise<[]> => {
-        await this.ensureBrowser();
-        const contestListPage = await this.browser!.newPage();
-        await contestListPage.goto('https://vjudge.net/contest/data?draw=4&start=0&length=100&sortDir=desc&sortCol=0&category=mine&running=0&title=&owner=');
-        const contests = (await contestListPage.evaluate(() => JSON.parse(document.body.innerText))).data;
-        contestListPage.close();
-        return contests;
+    fetchContestList = async (): Promise<Contest[]> => {
+        return this.api.listMyContest();
     };
-    fetchContestProblems = async (contestId: string) => {
-        await this.ensureBrowser();
-        const contestDetailPage = await this.browser!.newPage();
-        await contestDetailPage.goto(`https://vjudge.net/contest/${contestId}#overview`);
-        const problems = (await contestDetailPage.evaluate(() => JSON.parse(document.querySelector('body > textarea').innerText).problems));
-        contestDetailPage.close();
-        return problems;
+    fetchContestProblems = async (contestId: number): Promise<Problem[]> => {
+        return (await this.api.getContestDetail(contestId)).problems;
     };
-    openProblemDescription = async (descriptionId: string, descriptionVersion: string, title: string) => {
+    openProblemDescription = async (descriptionId: number, descriptionVersion: number, title: string) => {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Fetching Problem Description...',
             cancellable: false
         }, async (progress) => {
             progress.report({ increment: 0 });
-            await this.ensureBrowser();
-            progress.report({ increment: 10 });
-            const descriptionPage = await this.browser!.newPage();
-            progress.report({ increment: 20 });
-            await descriptionPage.setRequestInterception(true);
-            descriptionPage.on('request', (request) => {
-                if (request.url().indexOf('mathjax') !== -1) {
-                    request.abort();
-                } else {
-                    request.continue();
-                }
-            });
-            await descriptionPage.goto(`https://vjudge.net/problem/description/${descriptionId}?${descriptionVersion}`);
-            progress.report({ increment: 40 });
+            const html = await this.api.getProblemDescription(descriptionId, descriptionVersion);
+            progress.report({ increment: 50 });
             const panel = vscode.window.createWebviewPanel('vjudge',
                 title,
                 vscode.ViewColumn.Two,
                 {
                     enableScripts: true
                 });
-            panel.webview.html = await descriptionPage.evaluate(() => {
-                document.querySelector('style').remove();
-                let newStyle = document.createElement('style');
-                newStyle.innerHTML = `
-                dt {
-                    font-weight: bold;
-                    margin-top: 20px;
-                    padding-left: 5px;
-                }
-                dd {
-                    line-height: 26px;
-                    -webkit-font-smoothing: antialiased;
-                    -moz-osx-font-smoothing: grayscale;
-                    margin-inline-start: 10px;
-                }
-                pre {
-                    white-space: pre-wrap; /* Since CSS 2.1 */
-                    white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
-                    white-space: -pre-wrap; /* Opera 4-6 */
-                    white-space: -o-pre-wrap; /* Opera 7 */
-                    word-wrap: break-word; /* Internet Explorer 5.5+ */
-                }`;
-                document.head.appendChild(newStyle);
-                return document.documentElement.innerHTML;
-            });
-            progress.report({ increment: 30 });
-            descriptionPage.close();
+            panel.webview.html = html;
+            progress.report({ increment: 50 });
             return Promise.resolve();
         });
     };
-    submitCode = async (contestId: string, problemNum: string, code: string) => {
-        await this.ensureBrowser();
-        const submitCodePage = await this.browser!.newPage();
+    submitCode = async (contestId: number, problemNum: string, code: string, language: string) => {
         let succeed = false;
+        let runId = 0;
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Submitting Code...',
             cancellable: true
         }, async (progress, token) => {
-            progress.report({ increment: 20 });
-            await submitCodePage.goto(`https://vjudge.net/contest/${contestId}#problem/${problemNum}`);
-            await submitCodePage.click('#problem-submit');
-            await submitCodePage.waitForTimeout(1000);
-            progress.report({ increment: 20 });
-            const languageList = await submitCodePage.evaluate((problemNum) => {
-                document.querySelector('#contest-num').value = problemNum;
-                let languages = Array.apply(null,document.querySelector('#submit-language').options)
-                .map((option: any) => {
-                    return {
-                        name: option.innerText,
-                        value: option.value
-                    };
-                });
-                languages.shift();
-                return languages;
-            }, problemNum);
-            if(token.isCancellationRequested){
-                vscode.window.showErrorMessage('Cancelled');
-                return Promise.resolve();
+            progress.report({ increment: 30 });
+            try {
+                runId = await this.api.submitCode(contestId, problemNum, code, language);
+            } catch (e) {
+                console.log(e);
+                vscode.window.showErrorMessage(<string>e);
+                return;
             }
-            const chosenLanguage = await vscode.window.showQuickPick(
-                languageList.map(obj => obj.name),
-                { 
-                    canPickMany: false,
-                    placeHolder: 'Language'
-                });
-            progress.report({ increment: 20 });
-            if(!chosenLanguage){
-                vscode.window.showErrorMessage('Please choose language!');
-                return Promise.resolve();
-            }
-            const chosenLanguageValue = await languageList.find(obj => obj.name === chosenLanguage)!.value;
-            await submitCodePage.evaluate((chosenLanguageValue, code) => {
-                document.querySelector('#submit-language').value = chosenLanguageValue;
-                document.querySelector('#submit-solution').value = code;
-            }, chosenLanguageValue, code);
-            if(token.isCancellationRequested){
-                vscode.window.showErrorMessage('Cancelled');
-                return Promise.resolve();
-            }
-            progress.report({ increment: 20 });
-            await submitCodePage.click('#btn-submit');
+            progress.report({ increment: 70 });
             succeed = true;
             return Promise.resolve();
         });
         if(!succeed){
-            submitCodePage.close();
             return;
         }
         await vscode.window.withProgress({
@@ -232,48 +106,33 @@ export class VJudge {
             title: 'Judge',
             cancellable: false
         }, async (progress) => {
-            let status = 'pending';
-            let text = 'Pending';
+            let solution: Partial<Solution> = {
+                status: 'Pending'
+            };
             while(true){
-                console.log(status,text);
-                progress.report({ message: text });
-                let result;
-                try {
-                    result = await submitCodePage.evaluate(() => {
-                        return {
-                            status: document.querySelector('#info-panel > table > tbody > tr:nth-child(1) > td').parentElement.className,
-                            text: document.querySelector('#info-panel > table > tbody > tr:nth-child(1) > td').innerText
-                        };
-                    });
-                }catch{
-                    const error = await submitCodePage.evaluate(() => {
-                        if(!document.querySelector('#submit-alert') || document.querySelector('#submit-alert').style.display === 'none'){
-                            return undefined;
-                        }else{
-                            return document.querySelector('#submit-alert').innerText;
-                        }
-                    });
-                    if(!error){
-                        await submitCodePage.waitForTimeout(100);
-                        continue;
-                    }else{
-                        vscode.window.showErrorMessage(error);
-                        return Promise.resolve();
-                    }
-                }
-                status = result.status;
-                text = result.text;
-                if(status !== 'pending'){
+                progress.report({ message: solution.status });
+                const result = await this.api.fetchSolution(runId);
+                solution = result;
+                if(!solution.processing){
                     break;
                 }
-                await submitCodePage.waitForTimeout(200);
-                console.log(status,text);
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
-            console.log(status,text);
-            if(status === 'failed'){
-                vscode.window.showErrorMessage(text);
+            if(solution.statusType === 1){
+                if(solution.additionalInfo){
+                    vscode.window.showErrorMessage(solution.status!, 'Show additional info').then(selection => {
+                        if (selection === 'Show additional info'){
+                            const panel = vscode.window.createWebviewPanel('vjudge',
+                                `Submission ${runId} additional info`,
+                                vscode.ViewColumn.Two);
+                            panel.webview.html = solution.additionalInfo!;
+                        }
+                    });
+                }else{
+                    vscode.window.showErrorMessage(solution.status!);
+                }
             }else{
-                vscode.window.showInformationMessage(text);
+                vscode.window.showInformationMessage(solution.status!);
             }
             return Promise.resolve();
         });
@@ -281,15 +140,9 @@ export class VJudge {
         setTimeout(() => {
             this.infoProvider.refresh();
         }, 15000);
-        submitCodePage.close();
     };
-    fetchSubmissions = async (contestId: string) => {
-        await this.ensureBrowser();
-        const contestRankPage = await this.browser!.newPage();
-        await contestRankPage.goto(`https://vjudge.net/contest/rank/single/${contestId}`);
-        const submissions = (await contestRankPage.evaluate(() => JSON.parse(document.body.innerText))).submissions;
-        contestRankPage.close();
-        return submissions;
+    fetchSubmissions = async (contestId: number) => {
+        return this.api.fetchSubmissions(contestId);
     };
 }
 class VJudgeInfoProvider implements vscode.TreeDataProvider<VJudgeInfoNode> {
@@ -298,7 +151,7 @@ class VJudgeInfoProvider implements vscode.TreeDataProvider<VJudgeInfoNode> {
     readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
     data: {
         contestRootNode: VJudgeInfoNode,
-        contests: [],
+        contests: Contest[],
         contestsNodeCache: Map<number, VJudgeInfoNode>
     };
     vjudge: VJudge;
@@ -341,17 +194,17 @@ class VJudgeInfoProvider implements vscode.TreeDataProvider<VJudgeInfoNode> {
                 this.data.contests = await this.vjudge.fetchContestList();
                 for(const contest of this.data.contests){
                     // contest: 0->id 1->title 
-                    if(!this.data.contestsNodeCache.get(contest[0])){
+                    if(!this.data.contestsNodeCache.get(contest.id)){
                         const infoNode = new VJudgeInfoNode(
-                            (<string>contest[1]).trim(),
+                            contest.title.trim(),
                             vscode.TreeItemCollapsibleState.Collapsed,
                         );
-                        infoNode.contestId = contest[0];
+                        infoNode.contest = contest;
                         infoNode.tooltip = 
-                        `Start Time: ${new Date(contest[2]).toLocaleString()}
-End Time: ${new Date(contest[3]).toLocaleString()}
-Owner: ${contest[5]}`;
-                        this.data.contestsNodeCache.set(contest[0], infoNode);
+                        `Start Time: ${contest.begin.toLocaleString()}
+End Time: ${contest.end.toLocaleString()}
+Owner: ${contest.managerName}`;
+                        this.data.contestsNodeCache.set(contest.id, infoNode);
                     }
                 }
             }
@@ -363,10 +216,9 @@ Owner: ${contest[5]}`;
         }
 
         // Contest Node
-        const problems = await this.vjudge.fetchContestProblems(element.contestId!);
-        const submissions = await this.vjudge.fetchSubmissions(element.contestId!);
-        // eslint-disable-next-line eqeqeq
-        const filteredSubmissions = submissions.filter((submission: any) => submission[0] == this.vjudge.userId);
+        const problems = await this.vjudge.fetchContestProblems(element.contest!.id);
+        const submissions = await this.vjudge.fetchSubmissions(element.contest!.id);
+        const filteredSubmissions = submissions.filter(submission => submission.submitterId === this.vjudge.userId);
         let problemsNodeList = [];
         let i=0;
         for (const problem of problems) {
@@ -374,11 +226,9 @@ Owner: ${contest[5]}`;
                 `#${problem.num}. ${problem.title}`,
                 vscode.TreeItemCollapsibleState.None
             );
-            problemNode.contestId = element.contestId!;
-            problemNode.problemNum = problem.num;
-            problemNode.descriptionId = problem.publicDescId;
-            problemNode.descriptionVersion = problem.publicDescVersion;
-            problemNode.tooltip = `From: ${problem.oj}`;
+            problemNode.problem = problem;
+            problemNode.contest = element.contest;
+            problemNode.tooltip = `From: ${problem.oj} - ${problem.probNum}`;
             problemNode.description = '';
             for (const property of problem.properties) {
                 problemNode.tooltip += `\n${property.title}: ${property.content}`;
@@ -391,10 +241,9 @@ Owner: ${contest[5]}`;
             };
             problemNode.contextValue = 'problem';
             let solved = -1;
-            filteredSubmissions.forEach((submission: any) => {
-                // eslint-disable-next-line eqeqeq
-                if(submission[1] == i){
-                    solved = Math.max(solved,submission[2]);
+            filteredSubmissions.forEach(submission => {
+                if(submission.problemIndex === i){
+                    solved = Math.max(solved,submission.accepted);
                 }
             });
             let color;
@@ -414,11 +263,9 @@ Owner: ${contest[5]}`;
     }
 }
 export class VJudgeInfoNode extends vscode.TreeItem{
-    contestId?: string;
-    problemId?: string;
-    problemNum?: string;
-    descriptionId?: string;
-    descriptionVersion?: string;
+    contest?: Contest;
+    contestDetail?: ContestDetail;
+    problem?: Problem;
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,

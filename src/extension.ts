@@ -24,12 +24,24 @@ export function activate(context: vscode.ExtensionContext) {
 		if(answer === 'No'){
 			return;
 		}
-		vjudge.submitCode(problemNode.contestId!, problemNode.problemNum!, code);
+		const chosenLanguage = await vscode.window.showQuickPick(
+			Object.values(problemNode.problem!.languages).sort(),
+			{ 
+				canPickMany: false,
+				placeHolder: 'Language'
+			}
+		);
+		if(!chosenLanguage){
+			vscode.window.showErrorMessage('Please choose language!');
+			return;
+		}
+		const chosenLanguageId = Object.entries(problemNode.problem!.languages).find(([_, value]) => value === chosenLanguage)![0];
+		vjudge.submitCode(problemNode.contest!.id, problemNode.problem!.num, code, chosenLanguageId);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('vjudge-helper.openProblemDescription', (problemNode: VJudgeInfoNode) => {
 		vjudge.openProblemDescription(
-			problemNode.descriptionId!,
-			problemNode.descriptionVersion!,
+			problemNode.problem!.publicDescId,
+			problemNode.problem!.publicDescVersion,
 			problemNode.label
 		);
 	}));
