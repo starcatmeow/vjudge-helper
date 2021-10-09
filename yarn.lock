@@ -59,14 +59,13 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
-"@starcatmeow/vjudge-api@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.npmjs.org/@starcatmeow/vjudge-api/-/vjudge-api-0.3.0.tgz#e65c5e142cc7bd251b563b7576954e986565c3ec"
-  integrity sha512-mwAAXI1j2CI+Xcq3z9dMqSLur8MPQddLfi7sbowRYsJClgKjLG0T+kR8Ac2lxZJP6vDxSP5LrWMLGAE6W7XzaQ==
+"@starcatmeow/vjudge-api@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.npmjs.org/@starcatmeow/vjudge-api/-/vjudge-api-0.3.1.tgz#f7b130cae6f77dbe49be761904fab0bc2a7b6d41"
+  integrity sha512-4NxDHB07HXA9lixkMrJamoGUCaIMB+PgV5Awldx2C/bOhcKnTOIWs6CyZEclB2HRJkoKhAnBl8qLSF+D6ESHjw==
   dependencies:
     "@xmldom/xmldom" "^0.7.5"
     axios "^0.22.0"
-    axios-cookiejar-support "^2.0.2"
     tough-cookie "^4.0.0"
 
 "@tootallnate/once@1":
@@ -202,7 +201,7 @@ acorn@^7.4.0:
   resolved "https://registry.npm.taobao.org/acorn/download/acorn-7.4.1.tgz#feaed255973d2e77555b83dbc08851a6c63520fa"
   integrity sha1-/q7SVZc9LndVW4PbwIhRpsY1IPo=
 
-agent-base@6, agent-base@^6.0.2:
+agent-base@6:
   version "6.0.2"
   resolved "https://registry.npm.taobao.org/agent-base/download/agent-base-6.0.2.tgz?cache=0&sync_timestamp=1603480011934&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fagent-base%2Fdownload%2Fagent-base-6.0.2.tgz#49fff58577cfee3f37176feab4c22e00f86d7f77"
   integrity sha1-Sf/1hXfP7j83F2/qtMIuAPhtf3c=
@@ -287,13 +286,6 @@ astral-regex@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npm.taobao.org/astral-regex/download/astral-regex-2.0.0.tgz#483143c567aeed4785759c0865786dc77d7d2e31"
   integrity sha1-SDFDxWeu7UeFdZwIZXhtx319LjE=
-
-axios-cookiejar-support@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.npmjs.org/axios-cookiejar-support/-/axios-cookiejar-support-2.0.2.tgz#13ee91bc5cf269c6b9a17c2de7f52250fcf66826"
-  integrity sha512-Y9QwjsGNhkXoX2J4hSYBQPbCYu2N4p8jqiQ24jNPj0v7LpdhVUv5YyUVowshyCQ/t2WrhywGHUgghHC6Q0twsA==
-  dependencies:
-    http-cookie-agent "^1.0.1"
 
 axios@^0.22.0:
   version "0.22.0"
@@ -503,11 +495,6 @@ concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.npm.taobao.org/concat-map/download/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
-
-cookie@^0.4.1:
-  version "0.4.1"
-  resolved "https://registry.npmjs.org/cookie/-/cookie-0.4.1.tgz#afd713fe26ebd21ba95ceb61f9a8116e50a537d1"
-  integrity sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==
 
 core-util-is@~1.0.0:
   version "1.0.2"
@@ -991,14 +978,6 @@ htmlparser2@^6.0.0:
     domhandler "^4.0.0"
     domutils "^2.4.4"
     entities "^2.0.0"
-
-http-cookie-agent@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/http-cookie-agent/-/http-cookie-agent-1.0.1.tgz#388349e0034a2a9a488f1f33f827121778ea2c3b"
-  integrity sha512-gde0TzbcynnVRYG38YKBOzJTIZat97FLBJCETHVhwBDe9A5WJS5iKwnHqj3Z+EerRwdADd05ukAT4JBt7XV4BA==
-  dependencies:
-    agent-base "^6.0.2"
-    cookie "^0.4.1"
 
 http-proxy-agent@^4.0.1:
   version "4.0.1"

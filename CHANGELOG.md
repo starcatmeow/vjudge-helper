@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.2.2]
+
+Manually store cookies to avoid unexpected errors.
+
 ## [0.2.1]
 
 Change the request method from puppeteer to actual HTTP API to provide better compatibility and performance.
