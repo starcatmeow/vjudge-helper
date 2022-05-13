@@ -38,7 +38,7 @@ export class VJudge {
             }
             progress.report({ increment: 50 });
             try{
-                this.userId = await this.api.login(this.username, this.password);
+                await this.api.login(this.username, this.password);
             }catch(e){
                 vscode.window.showErrorMessage(<string>e);
                 this.username = undefined;
@@ -46,7 +46,7 @@ export class VJudge {
                 return;
             }
             progress.report({ increment: 50 });
-            vscode.window.showInformationMessage(`Logged in as ${this.username}(#${this.userId})!`);
+            vscode.window.showInformationMessage(`Logged in as ${this.username}!`);
             this.loggedin = true;
             this.infoProvider.register();
             return Promise.resolve();

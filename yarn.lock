@@ -59,10 +59,10 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
-"@starcatmeow/vjudge-api@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.npmjs.org/@starcatmeow/vjudge-api/-/vjudge-api-0.3.1.tgz#f7b130cae6f77dbe49be761904fab0bc2a7b6d41"
-  integrity sha512-4NxDHB07HXA9lixkMrJamoGUCaIMB+PgV5Awldx2C/bOhcKnTOIWs6CyZEclB2HRJkoKhAnBl8qLSF+D6ESHjw==
+"@starcatmeow/vjudge-api@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@starcatmeow/vjudge-api/-/vjudge-api-0.5.0.tgz#dc443454a79a7c80026575f35b0e746e92836e44"
+  integrity sha512-ljFbwJUoSktCBpGU4Hy/5t+UeyAJwSuUjybCVhEJZVMvLFbY3SlABX5cyeL7PxzkEU+OGNfDhVyZE/Ieyaa2gg==
   dependencies:
     "@xmldom/xmldom" "^0.7.5"
     axios "^0.22.0"

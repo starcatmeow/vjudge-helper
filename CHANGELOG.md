@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.2.3]
+
+Update @starcatmeow/vjudge-api to v0.5.0, fix https://github.com/starcatmeow/vjudge-helper/issues/2.
+
 ## [0.2.2]
 
 Manually store cookies to avoid unexpected errors.
