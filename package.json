@@ -2,7 +2,7 @@
 	"name": "vjudge-helper",
 	"displayName": "VJudge Helper",
 	"description": "Help fetch statement and submit your code!",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"keywords": [
 		"VJudge",
 		"OJ",
@@ -91,12 +91,12 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "yarn run compile",
+		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"pretest": "yarn run compile && yarn run lint",
+		"pretest": "npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
-		"deploy": "vsce publish --yarn",
+		"deploy": "vsce publish",
 		"package": "vsce package"
 	},
 	"devDependencies": {
@@ -106,11 +106,11 @@
 		"@types/vscode": "^1.55.0",
 		"@typescript-eslint/eslint-plugin": "^4.14.1",
 		"@typescript-eslint/parser": "^4.14.1",
+		"@vscode/vsce": "^2.26.1",
 		"eslint": "^7.19.0",
 		"glob": "^7.1.6",
 		"mocha": "^8.2.1",
 		"typescript": "^4.1.3",
-		"vsce": "^1.87.1",
 		"vscode-test": "^1.5.0"
 	},
 	"dependencies": {

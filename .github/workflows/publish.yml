@@ -15,7 +15,7 @@ jobs:
     - name: Install Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 14.x
+        node-version: 18.x
     - run: npm install
     - name: Publish
       if: success() && startsWith( github.ref, 'refs/tags/')
@@ -25,11 +25,11 @@ jobs:
     - name: Package
       if: success() && startsWith( github.ref, 'refs/tags/')
       run: npm run package
-    - name: Release
-      uses: alexellis/upload-assets@0.2.2
-      if: success() && startsWith( github.ref, 'refs/tags/')
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
       with:
-        asset_paths: '["./*.vsix"]'
-    
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: '*.vsix'
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
