@@ -39,9 +39,12 @@ export function activate(context: vscode.ExtensionContext) {
 		vjudge.submitCode(problemNode.contest!.id, problemNode.problem!.num, code, chosenLanguageId);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('vjudge-helper.openProblemDescription', (problemNode: VJudgeInfoNode) => {
+		const problem = problemNode.problem!;
+		const descId = problem.enabledDescKeys[0];
+		const descVersion = problem.descBriefs.filter(x => x.key === descId)[0].version
 		vjudge.openProblemDescription(
-			problemNode.problem!.publicDescId,
-			problemNode.problem!.publicDescVersion,
+			descId,
+			descVersion,
 			problemNode.label
 		);
 	}));
